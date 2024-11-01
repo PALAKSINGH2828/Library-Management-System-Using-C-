@@ -1,0 +1,218 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+#include <limits> // Add this line to include numeric_limits
+using namespace std;
+
+struct Book {
+    int id;
+    string title;
+    string author;
+    bool isIssued;
+    Book* next;
+};
+
+void addBook(Book*& head, int id, const string& title, const string& author) {
+    Book* newBook = new Book{id, title, author, false, nullptr};
+    if (!head) {
+        head = newBook;
+    } else {
+        Book* temp = head;
+        while (temp->next) {
+            temp = temp->next;
+        }
+        temp->next = newBook;
+    }
+    cout << "Book added successfully." << endl;
+}
+
+Book* searchBookById(Book* head, int id) {
+    Book* temp = head;
+    while (temp) {
+        if (temp->id == id) {
+            return temp;
+        }
+        temp = temp->next;
+    }
+    return nullptr;
+}
+
+Book* searchBookByTitle(Book* head, const string& title) {
+    Book* temp = head;
+    while (temp) {
+        if (temp->title == title) {
+            return temp;
+        }
+        temp = temp->next;
+    }
+    return nullptr;
+}
+
+void issueBook(Book* head, int id) {
+    Book* book = searchBookById(head, id);
+    if (book && !book->isIssued) {
+        book->isIssued = true;
+        cout << "Book issued successfully." << endl;
+    } else if (book && book->isIssued) {
+        cout << "Book is already issued." << endl;
+    } else {
+        cout << "Book not found." << endl;
+    }
+}
+
+void returnBook(Book* head, int id) {
+    Book* book = searchBookById(head, id);
+    if (book && book->isIssued) {
+        book->isIssued = false;
+        cout << "Book returned successfully." << endl;
+    } else if (book && !book->isIssued) {
+        cout << "Book was not issued." << endl;
+    } else {
+        cout << "Book not found." << endl;
+    }
+}
+
+void listBooks(Book* head) {
+    // Convert linked list to vector for sorting
+    vector<Book*> books;
+    Book* temp = head;
+    while (temp) {
+        books.push_back(temp);
+        temp = temp->next;
+    }
+
+    // Sort by ID (you can also sort by title)
+    sort(books.begin(), books.end(), [](Book* a, Book* b) {
+        return a->id < b->id;
+    });
+
+    // Display books
+    for (const auto& book : books) {
+        cout << "ID: " << book->id << ", Title: " << book->title
+             << ", Author: " << book->author
+             << ", Status: " << (book->isIssued ? "Issued" : "Available") << endl;
+    }
+}
+
+void deleteBook(Book*& head, int id) {
+    if (!head) return;
+
+    if (head->id == id) {
+        Book* toDelete = head;
+        head = head->next;
+        delete toDelete;
+        cout << "Book deleted successfully." << endl;
+        return;
+    }
+
+    Book* temp = head;
+    while (temp->next && temp->next->id != id) {
+        temp = temp->next;
+    }
+
+    if (temp->next) {
+        Book* toDelete = temp->next;
+        temp->next = temp->next->next;
+        delete toDelete;
+        cout << "Book deleted successfully." << endl;
+    } else {
+        cout << "Book not found." << endl;
+    }
+}
+
+int main() {
+    Book* library = nullptr;
+    int choice, id;
+    string title, author;
+
+    while (true) {
+        cout << "\nLibrary Management System\n";
+        cout << "1. Add New Book\n";
+        cout << "2. Search for a Book\n";
+        cout << "3. Issue a Book\n";
+        cout << "4. Return a Book\n";
+        cout << "5. List All Books\n";
+        cout << "6. Delete a Book\n";
+        cout << "7. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter Book ID: ";
+                cin >> id;
+                cout << "Enter Book Title: ";
+                cin.ignore();
+                getline(cin, title);
+                cout << "Enter Book Author: ";
+                getline(cin, author);
+                addBook(library, id, title, author);
+                break;
+
+            case 2:
+                cout << "Enter Book ID or Title to search: ";
+                cin.ignore();
+                getline(cin, title);
+                if (isdigit(title[0])) {
+                    id = stoi(title);
+                    Book* book = searchBookById(library, id);
+                    if (book) {
+                        cout << "ID: " << book->id << ", Title: " << book->title
+                             << ", Author: " << book->author
+                             << ", Status: " << (book->isIssued ? "Issued" : "Available") << endl;
+                    } else {
+                        cout << "Book not found." << endl;
+                    }
+                } else {
+                    Book* book = searchBookByTitle(library, title);
+                    if (book) {
+                        cout << "ID: " << book->id << ", Title: " << book->title
+                             << ", Author: " << book->author
+                             << ", Status: " << (book->isIssued ? "Issued" : "Available") << endl;
+                    } else {
+                        cout << "Book not found." << endl;
+                    }
+                }
+                break;
+
+            case 3:
+                cout << "Enter Book ID to issue: ";
+                cin >> id;
+                if (!cin.fail()) { // Check if valid ID is provided
+                    issueBook(library, id);
+                } else {
+                    cout << "Invalid input for Book ID. Please enter a valid integer." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Fix: ensure cin ignore works
+                }
+                break;
+
+            case 4:
+                cout << "Enter Book ID to return: ";
+                cin >> id;
+                returnBook(library, id);
+                break;
+
+            case 5:
+                listBooks(library);
+                break;
+
+            case 6:
+                cout << "Enter Book ID to delete: ";
+                cin >> id;
+                deleteBook(library, id);
+                break;
+
+            case 7:
+                cout << "Thank you for using the system." << endl;
+                exit(0);
+
+            default:
+                cout << "Invalid choice. Please try again." << endl;
+        }
+    }
+
+    return 0;
+}
